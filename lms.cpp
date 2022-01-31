@@ -41,7 +41,7 @@ void *LMS_Priv::compute_leafs(void *th_arg) {
         SHA256_Update(&T_ctx, OTS_PRIV[r-(1 << h)]->gen_pub().get_K().c_str(), DIGEST_LENGTH);
         SHA256_Final(T+r*DIGEST_LENGTH, &T_ctx);
     }
-    return nullptr;
+    pthread_exit(nullptr);
 }
 
 void *LMS_Priv::compute_knots(void *th_arg) {
@@ -60,7 +60,7 @@ void *LMS_Priv::compute_knots(void *th_arg) {
         SHA256_Update(&T_ctx, T + (2 * r + 1) * DIGEST_LENGTH, DIGEST_LENGTH);
         SHA256_Final(T + r * DIGEST_LENGTH, &T_ctx);
     }
-    return nullptr;
+    pthread_exit(nullptr);
 }
 
 void *LMS_Priv::compute_lmots_priv(void *th_arg) {
@@ -70,10 +70,8 @@ void *LMS_Priv::compute_lmots_priv(void *th_arg) {
     const auto h = arg->prv->typecode.h;
     const auto OTS_PRIV = arg->prv->OTS_PRIV;
     const auto NUM_THREADS = arg->NUM_THREADS;
-    for (uint32_t qi=0; qi<(1 << h); qi++) {
-        if (qi % NUM_THREADS == arg->num) {
-            OTS_PRIV[qi] = new LM_OTS_Priv(lmotsAlgorithmType, I, qi);
-        }
+    for (uint32_t qi=arg->num; qi<(1 << h); qi+=NUM_THREADS) {
+        OTS_PRIV[qi] = new LM_OTS_Priv(lmotsAlgorithmType, I, qi);
     }
     pthread_exit(nullptr);
 }

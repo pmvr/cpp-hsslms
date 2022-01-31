@@ -94,20 +94,21 @@ std::string LM_OTS_Priv::sign(const std::string &message) {
 }
 
 LM_OTS_Pub LM_OTS_Priv::gen_pub() {
-    SHA256_CTX K_ctx, tmp_ctx;
+    SHA256_CTX K_ctx, tmp_ctx, tmp2_ctx;
 
     SHA256_Init(&K_ctx);
     SHA256_Update(&K_ctx, I.data(), I.size());
     SHA256_Update(&K_ctx, u32str(q).c_str(), 4);
     SHA256_Update(&K_ctx, D_PBLC.c_str(), D_PBLC.size());
 
+    SHA256_Init(&tmp2_ctx);
+    SHA256_Update(&tmp2_ctx, I.data(), I.size());
+    SHA256_Update(&tmp2_ctx, u32str(q).c_str(), 4);
     uint8_t tmp[DIGEST_LENGTH];
     for (auto i=0; i<lmotsAlgorithmType.p; i++) {
         memcpy(tmp, x + i * DIGEST_LENGTH, DIGEST_LENGTH);
         for (auto j = 0; j < (1 << lmotsAlgorithmType.w) - 1; j++) {
-            SHA256_Init(&tmp_ctx);
-            SHA256_Update(&tmp_ctx, I.data(), I.size());
-            SHA256_Update(&tmp_ctx, u32str(q).c_str(), 4);
+            tmp_ctx = tmp2_ctx;
             SHA256_Update(&tmp_ctx, u16str(i).c_str(), 2);
             SHA256_Update(&tmp_ctx, u8str(j).c_str(), 1);
             SHA256_Update(&tmp_ctx, tmp, DIGEST_LENGTH);
