@@ -6,14 +6,14 @@ C++ according to `RFC 8554 <https://www.rfc-editor.org/rfc/rfc8554.html>`_. It i
 
 The implementation is meant as a reference and for educational purposes. A similar implementation in Python can be found `here <https://github.com/pmvr/python-hsslms>`_.
 
-The only dependency is OpenSSL for key derivation *PKCS5_PBKDF2_HMAC*, random number generation *RAND_priv_bytes*, hashing *SHA-256* and encryption with autentication *AES-GCM*.
-
 The implementation provides 4 classes:
 
 * LM-OTS One-Time Signatures, i.e. ``LM_OTS_Priv``, ``LM_OTS_Pub``. These are one-time signatures; each private key MUST be used at most one time to sign a message.
 * Leighton-Micali Signatures (LMS), i.e. ``LMS_Priv``, ``LMS_Pub``. This system holds a fixed number of one-time signatures, i.e. LM-OTS.
 * Hierarchical Signatures (HSS), i.e. ``HSS_Priv``, ``HSS_Pub``. This system uses a sequence of LMS.
 * Persistent Hierarchical Signatures, i.e. ``PersHSS_Priv``. A child of ``HSS_Priv`` where the private key is stored in an encrypted file.
+
+The only dependency is OpenSSL for key derivation *PKCS5_PBKDF2_HMAC*, random number generation *RAND_priv_bytes*, hashing *SHA-256* and encryption with autentication *AES-GCM*. If the class ``PersHSS_Priv`` is not needed the only dependency to be fulfilled is for random number generation and hashing.
 
 The projects compiles to an executable ``hbslms`` with a command line interface.
 
@@ -178,23 +178,23 @@ Key Generation
 ^^^^^^^^^^^^^^
 
 +----------+-------+-------+-------+-------+-------------+------+------+------+-------+
-| Key-Type | Time[s]               | #Signatures         | Size of Signature          |
+| Key-Type | Time[s]                       | #Signatures | Size of Signature          |
 +==========+=======+=======+=======+=======+=============+======+======+======+=======+
 | w        | 1     | 2     | 4     | 8     |             | 1    | 2    | 4    | 8     |
 +----------+-------+-------+-------+-------+-------------+------+------+------+-------+
-| H5       | 0.001 | 0.002 | 0.002 | 0.01 | 1024         | 8848 | 4624 | 2512 | 1456  |
+| H5       | 0.001 | 0.002 | 0.002 | 0.01  | 1024        | 8848 | 4624 | 2512 | 1456  |
 +----------+-------+-------+-------+-------+-------------+------+------+------+-------+
 | H10      | 0.01  | 0.01  |  0.02 |  0.1  | 1024        | 8848 | 4624 | 2512 | 1456  |
 +----------+-------+-------+-------+-------+-------------+------+------+------+-------+
-| H15      | 0.2   |  0.3  |  0.4  | 3.4   | 32768       | 9008 | 4784 | 2672 | 1616  |
+| H15      | 0.2   |  0.2  |  0.4  | 3.3   | 32768       | 9008 | 4784 | 2672 | 1616  |
 +----------+-------+-------+-------+-------+-------------+------+------+------+-------+
-| H20      | 6.6   |  7.1  | 13.7  |  109  | 1048576     | 9168 | 4944 | 2832 | 1776  |
+| H20      | 6.6   |  6.8  | 13.3  |  106  | 1048576     | 9168 | 4944 | 2832 | 1776  |
 +----------+-------+-------+-------+-------+-------------+------+------+------+-------+
-| H10/H10  | 0.02  |  0.03 | 0.04  |  0.2  | 1048576     | 17748| 9300 | 5076 | 2964  |
+| H10/H10  | 0.02  |  0.02 | 0.04  |  0.2  | 1048576     | 17748| 9300 | 5076 | 2964  |
 +----------+-------+-------+-------+-------+-------------+------+------+------+-------+
 | H10/H15  | 0.3   |  0.3  |  0.5  |  3.5  | 33554432    | 17908| 9460 | 5236 | 3124  |
 +----------+-------+-------+-------+-------+-------------+------+------+------+-------+
-| H15/H15  | 0.4   | 0.5   | 0.9   | 6.8  | 1073741824   | 18068| 9620 | 5396 | 3284  |
+| H15/H15  | 0.4   | 0.5   | 0.9   | 6.7   | 1073741824  | 18068| 9620 | 5396 | 3284  |
 +----------+-------+-------+-------+-------+-------------+------+------+------+-------+
 
 

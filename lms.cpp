@@ -31,16 +31,15 @@ void *LMS_Priv::compute_leafs(void *th_arg) {
     const auto T = arg->prv->T;
     const auto OTS_PRIV= arg->prv->OTS_PRIV;
     const auto NUM_THREADS = arg->NUM_THREADS;
-    SHA256_CTX T_ctx;
-    for (uint32_t r=(1 << h); r<(1 << (h+1)); r++) {
-        if (r % NUM_THREADS == arg->num) {
-            SHA256_Init(&T_ctx);
-            SHA256_Update(&T_ctx, I.data(), I.size());
-            SHA256_Update(&T_ctx, u32str(r).c_str(), 4);
-            SHA256_Update(&T_ctx, D_LEAF.c_str(), D_LEAF.size());
-            SHA256_Update(&T_ctx, OTS_PRIV[r-(1 << h)]->gen_pub().get_K().c_str(), DIGEST_LENGTH);
-            SHA256_Final(T+r*DIGEST_LENGTH, &T_ctx);
-        }
+    SHA256_CTX T_ctx, tmp_ctx;
+    SHA256_Init(&tmp_ctx);
+    SHA256_Update(&tmp_ctx, I.data(), I.size());
+    for (uint32_t r=(1 << h) + ((arg->num - (1 << h)) % NUM_THREADS); r<(1 << (h+1)); r+=NUM_THREADS) {
+        T_ctx = tmp_ctx;
+        SHA256_Update(&T_ctx, u32str(r).c_str(), 4);
+        SHA256_Update(&T_ctx, D_LEAF.c_str(), D_LEAF.size());
+        SHA256_Update(&T_ctx, OTS_PRIV[r-(1 << h)]->gen_pub().get_K().c_str(), DIGEST_LENGTH);
+        SHA256_Final(T+r*DIGEST_LENGTH, &T_ctx);
     }
     return nullptr;
 }
@@ -48,21 +47,18 @@ void *LMS_Priv::compute_leafs(void *th_arg) {
 void *LMS_Priv::compute_knots(void *th_arg) {
     auto *arg = (struct th_args *)th_arg;
     const auto I = arg->prv->I;
-    const auto h = arg->prv->typecode.h;
     const auto T = arg->prv->T;
-    const auto OTS_PRIV= arg->prv->OTS_PRIV;
     const auto NUM_THREADS = arg->NUM_THREADS;
-    SHA256_CTX T_ctx;
-    for (uint32_t r=(1 << arg->i); r<(1 << (arg->i+1)); r++) {
-        if (r % NUM_THREADS == arg->num) {
-            SHA256_Init(&T_ctx);
-            SHA256_Update(&T_ctx, I.data(), I.size());
-            SHA256_Update(&T_ctx, u32str(r).c_str(), 4);
-            SHA256_Update(&T_ctx, D_INTR.c_str(), D_INTR.size());
-            SHA256_Update(&T_ctx, T + 2 * r * DIGEST_LENGTH, DIGEST_LENGTH);
-            SHA256_Update(&T_ctx, T + (2 * r + 1) * DIGEST_LENGTH, DIGEST_LENGTH);
-            SHA256_Final(T + r * DIGEST_LENGTH, &T_ctx);
-        }
+    SHA256_CTX T_ctx, tmp_ctx;;
+    SHA256_Init(&tmp_ctx);
+    SHA256_Update(&tmp_ctx, I.data(), I.size());
+    for (uint32_t r=(1 << arg->i) + ((arg->num - (1 << arg->i)) % NUM_THREADS) ; r<(1 << (arg->i+1)); r+=NUM_THREADS) {
+        T_ctx = tmp_ctx;
+        SHA256_Update(&T_ctx, u32str(r).c_str(), 4);
+        SHA256_Update(&T_ctx, D_INTR.c_str(), D_INTR.size());
+        SHA256_Update(&T_ctx, T + 2 * r * DIGEST_LENGTH, DIGEST_LENGTH);
+        SHA256_Update(&T_ctx, T + (2 * r + 1) * DIGEST_LENGTH, DIGEST_LENGTH);
+        SHA256_Final(T + r * DIGEST_LENGTH, &T_ctx);
     }
     return nullptr;
 }

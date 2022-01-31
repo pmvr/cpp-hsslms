@@ -33,15 +33,26 @@ std::string u8str(uint8_t n) {
     return std::string(1, (char)n);
 }
 
-uint8_t coef(const std::string S, const uint16_t i, const uint8_t w) {
-    return ((1<<w) - 1) & (S[(i*w) >> 3] >> (8 - (w * (i % (8 / w)) + w)));
+void coef(const std::string &S, const uint8_t w, uint8_t *dest, const uint8_t num) {
+    uint8_t k=0;
+    const uint8_t mask = (1<<w) - 1;
+    for (auto i=0; i<S.size(); i++) {
+        uint8_t s = S[i];
+        for (auto j=8-w; j>=0; j-=w) {
+            dest[k] = (s >> j) & mask;
+            k += 1;
+            if (k == num) return;
+        }
+    }
+    //return ((1<<w) - 1) & (S[(i*w) >> 3] >> (8 - (w * (i % (8 / w)) + w)));
 }
 
-std::string cksm(const std::string S, const uint8_t w, const uint8_t n, const uint16_t ls) {
-    uint16_t s {0};
-    for (auto i=0; i<(n*8)/w; i++) {
-        s += (1<<w) - 1 - coef(S,i,w);
-    }
+std::string cksm(const std::string &S, const uint8_t w, const uint8_t n, const uint16_t ls) {
+    const uint16_t m = (n*8)/w;
+    uint8_t coefs[m];
+    coef(S, w, coefs, m);
+    uint16_t s = ((1<<w)-1) * m;
+    for (auto i=0; i<m; i++) s -= coefs[i];
     return u16str(s << ls);
 }
 

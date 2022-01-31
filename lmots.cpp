@@ -68,19 +68,19 @@ std::string LM_OTS_Priv::sign(const std::string &message) {
     SHA256_Update(&hash_ctx, C, DIGEST_LENGTH);
     SHA256_Update(&hash_ctx, message.c_str(), message.size());
     SHA256_Final(Q, &hash_ctx);
-    uint8_t a;
     std::string Qstr_chksm = std::string((char*)Q, sizeof(Q));
     Qstr_chksm += cksm(Qstr_chksm, lmotsAlgorithmType.w, DIGEST_LENGTH, lmotsAlgorithmType.ls);
     uint8_t tmp[DIGEST_LENGTH];
+    uint8_t a[lmotsAlgorithmType.p];
+    coef(Qstr_chksm, lmotsAlgorithmType.w, a, lmotsAlgorithmType.p);
     for (auto i=0; i<lmotsAlgorithmType.p; i++) {
-        a = coef(Qstr_chksm, i, lmotsAlgorithmType.w);
         memcpy(tmp, x+i*DIGEST_LENGTH, DIGEST_LENGTH);
         SHA256_CTX hash_ctx_pre;
         SHA256_Init(&hash_ctx_pre);
         SHA256_Update(&hash_ctx_pre, I.data(), I.size());
         SHA256_Update(&hash_ctx_pre, u32str(q).c_str(), 4);
         SHA256_Update(&hash_ctx_pre, u16str(i).c_str(), 2);
-        for (auto j=0; j<a; j++) {
+        for (auto j=0; j<a[i]; j++) {
             hash_ctx = hash_ctx_pre;
             SHA256_Update(&hash_ctx, u8str(j).c_str(), 1);
             SHA256_Update(&hash_ctx, tmp, DIGEST_LENGTH);
@@ -162,11 +162,11 @@ void LM_OTS_Pub::algo4b(uint8_t Kc[DIGEST_LENGTH], const std::string &message, c
     SHA256_Update(&Kc_ctx, q.c_str(), q.size());
     SHA256_Update(&Kc_ctx, D_PBLC.c_str(), D_PBLC.size());
     uint8_t tmp[DIGEST_LENGTH];
-    uint8_t a;
+    uint8_t a[lmotsAlgorithmType.p];
+    coef(Qstr + cksm(Qstr, lmotsAlgorithmType.w, DIGEST_LENGTH, lmotsAlgorithmType.ls), lmotsAlgorithmType.w, a, lmotsAlgorithmType.p);
     for (auto i=0; i<lmotsAlgorithmType.p; i++) {
-        a = coef(Qstr + cksm(Qstr, lmotsAlgorithmType.w, DIGEST_LENGTH, lmotsAlgorithmType.ls), i, lmotsAlgorithmType.w);
         memcpy(tmp, signature.c_str()+4+(i+1)*DIGEST_LENGTH, DIGEST_LENGTH);
-        for (uint32_t j = a; j < (1 << lmotsAlgorithmType.w) - 1; j++) {
+        for (uint32_t j = a[i]; j < (1 << lmotsAlgorithmType.w) - 1; j++) {
             SHA256_Init(&tmp_ctx);
             SHA256_Update(&tmp_ctx, I.data(), I.size());
             SHA256_Update(&tmp_ctx, q.c_str(), q.size());

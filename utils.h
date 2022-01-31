@@ -12,10 +12,10 @@ uint32_t strTou32(const char *s);
 std::string u32str(uint32_t n);
 std::string u16str(uint16_t n);
 std::string u8str(uint8_t n);
-uint8_t coef(const std::string S, const uint16_t i, const uint8_t w);
-std::string cksm(const std::string S, const uint8_t w, const uint8_t n, const uint16_t ls);
+void coef(const std::string &S, const uint8_t w, uint8_t *dest, const uint8_t num);
+std::string cksm(const std::string &S, const uint8_t w, const uint8_t n, const uint16_t ls);
 
-void cout_hex(const uint8_t *x, const size_t n);
+//void cout_hex(const uint8_t *x, const size_t n);
 
 class INVALID : public std::exception {
 private:
