@@ -73,15 +73,15 @@ std::string LM_OTS_Priv::sign(const std::string &message) {
     uint8_t tmp[DIGEST_LENGTH];
     uint8_t a[lmotsAlgorithmType.p];
     coef(Qstr_chksm, lmotsAlgorithmType.w, a, lmotsAlgorithmType.p);
+    SHA256_CTX hash_ctx_pre;
+    SHA256_Init(&hash_ctx_pre);
+    SHA256_Update(&hash_ctx_pre, I.data(), I.size());
+    SHA256_Update(&hash_ctx_pre, u32str(q).c_str(), 4);
     for (auto i=0; i<lmotsAlgorithmType.p; i++) {
         memcpy(tmp, x+i*DIGEST_LENGTH, DIGEST_LENGTH);
-        SHA256_CTX hash_ctx_pre;
-        SHA256_Init(&hash_ctx_pre);
-        SHA256_Update(&hash_ctx_pre, I.data(), I.size());
-        SHA256_Update(&hash_ctx_pre, u32str(q).c_str(), 4);
-        SHA256_Update(&hash_ctx_pre, u16str(i).c_str(), 2);
         for (auto j=0; j<a[i]; j++) {
             hash_ctx = hash_ctx_pre;
+            SHA256_Update(&hash_ctx, u16str(i).c_str(), 2);
             SHA256_Update(&hash_ctx, u8str(j).c_str(), 1);
             SHA256_Update(&hash_ctx, tmp, DIGEST_LENGTH);
             SHA256_Final(tmp, &hash_ctx);
@@ -148,7 +148,7 @@ void LM_OTS_Pub::algo4b(uint8_t Kc[DIGEST_LENGTH], const std::string &message, c
     if (pubkey.substr(0,4) != signature.substr(0,4)) throw INVALID("LMOTS signature is invalid.");
     if (signature.size() != 4 + DIGEST_LENGTH * (lmotsAlgorithmType.p+1)) throw INVALID("LMOTS signature is invalid.");
     std::string C = signature.substr(4,DIGEST_LENGTH);
-    SHA256_CTX Q_ctx, tmp_ctx, Kc_ctx;
+    SHA256_CTX Q_ctx, tmp_ctx, hash_ctx_pre, Kc_ctx;
     uint8_t Q[DIGEST_LENGTH];
     SHA256_Init(&Q_ctx);
     SHA256_Update(&Q_ctx, I.data(), I.size());
@@ -165,12 +165,13 @@ void LM_OTS_Pub::algo4b(uint8_t Kc[DIGEST_LENGTH], const std::string &message, c
     uint8_t tmp[DIGEST_LENGTH];
     uint8_t a[lmotsAlgorithmType.p];
     coef(Qstr + cksm(Qstr, lmotsAlgorithmType.w, DIGEST_LENGTH, lmotsAlgorithmType.ls), lmotsAlgorithmType.w, a, lmotsAlgorithmType.p);
+    SHA256_Init(&hash_ctx_pre);
+    SHA256_Update(&hash_ctx_pre, I.data(), I.size());
+    SHA256_Update(&hash_ctx_pre, q.c_str(), 4);
     for (auto i=0; i<lmotsAlgorithmType.p; i++) {
         memcpy(tmp, signature.c_str()+4+(i+1)*DIGEST_LENGTH, DIGEST_LENGTH);
-        for (uint32_t j = a[i]; j < (1 << lmotsAlgorithmType.w) - 1; j++) {
-            SHA256_Init(&tmp_ctx);
-            SHA256_Update(&tmp_ctx, I.data(), I.size());
-            SHA256_Update(&tmp_ctx, q.c_str(), q.size());
+        for (auto j = a[i]; j < (1 << lmotsAlgorithmType.w) - 1; j++) {
+            tmp_ctx = hash_ctx_pre;
             SHA256_Update(&tmp_ctx, u16str(i).c_str(), 2);
             SHA256_Update(&tmp_ctx, u8str(j).c_str(), 1);
             SHA256_Update(&tmp_ctx, tmp, DIGEST_LENGTH);

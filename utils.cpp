@@ -56,6 +56,12 @@ std::string cksm(const std::string &S, const uint8_t w, const uint8_t n, const u
     return u16str(s << ls);
 }
 
+int32_t mod(int32_t a, int32_t b) {
+    // computes a = q*b + r with 0 <= r < b
+    int32_t r = a % b;
+    return r < 0 ? r + b : r;
+}
+
 /*void cout_hex(const uint8_t *x, const size_t n) {
     for (auto i = 0; i < n; i++) std::cout << std::hex << std::setfill('0') << std::setw(2) << +x[i];
     std::cout << std::endl;

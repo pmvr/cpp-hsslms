@@ -8,6 +8,7 @@
 #include "performancetest.h"
 #include <unistd.h>
 #include <sys/sysinfo.h>
+//#include "sha256.h"
 
 std::string readfile(std::string &filename) {
     std::ifstream ifs;
@@ -326,8 +327,6 @@ int action_verify(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-//    HSS_Priv sk = HSS_Priv(std::vector<LMS_ALGORITHM_TYPE>{LMS_SHA256_M32_H15}, LMOTS_SHA256_N32_W8, 4);
-//    exit(0);
     switch(getopt(argc, argv, "ha:")) {
         case 'a': //here an action
             if (strcmp(optarg, "test") == 0) return action_test();

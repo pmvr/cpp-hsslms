@@ -9,8 +9,6 @@
 #include <cstring>
 #include <array>
 #include <vector>
-#include <openssl/sha.h>
-#include <openssl/rand.h>
 #include <pthread.h>
 #include "utils.h"
 #include "lmots.h"

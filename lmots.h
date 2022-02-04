@@ -7,9 +7,9 @@
 
 #include <iostream>
 #include <cstring>
-#include <openssl/sha.h>
-#include <openssl/rand.h>
 #include "utils.h"
+#include <openssl/rand.h>
+#include <openssl/sha.h>
 
 #define DIGEST_LENGTH SHA256_DIGEST_LENGTH
 
