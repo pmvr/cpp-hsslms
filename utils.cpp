@@ -33,8 +33,8 @@ std::string u8str(uint8_t n) {
     return std::string(1, (char)n);
 }
 
-void coef(const std::string &S, const uint8_t w, uint8_t *dest, const uint8_t num) {
-    uint8_t k=0;
+void coef(const std::string &S, const uint8_t w, uint8_t *dest, const uint16_t num) {
+    uint16_t k=0;
     const uint8_t mask = (1<<w) - 1;
     for (auto i=0; i<S.size(); i++) {
         uint8_t s = S[i];
@@ -57,7 +57,7 @@ std::string cksm(const std::string &S, const uint8_t w, const uint8_t n, const u
 }
 
 /*void cout_hex(const uint8_t *x, const size_t n) {
-    for (auto i = 0; i < n; i++) std::cout << std::hex << std::setfill('0') << std::setw(2) << +x[i] << ' ';
+    for (auto i = 0; i < n; i++) std::cout << std::hex << std::setfill('0') << std::setw(2) << +x[i];
     std::cout << std::endl;
 }*/
 
