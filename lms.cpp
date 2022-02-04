@@ -34,7 +34,7 @@ void *LMS_Priv::compute_leafs(void *th_arg) {
     SHA256_CTX T_ctx, tmp_ctx;
     SHA256_Init(&tmp_ctx);
     SHA256_Update(&tmp_ctx, I.data(), I.size());
-    for (uint32_t r=(1 << h) + ((arg->num - (1 << h)) % NUM_THREADS); r<(1 << (h+1)); r+=NUM_THREADS) {
+    for (uint32_t r=(1 << h) + mod(arg->num - (1 << h),NUM_THREADS); r<(1 << (h+1)); r+=NUM_THREADS) {
         T_ctx = tmp_ctx;
         SHA256_Update(&T_ctx, u32str(r).c_str(), 4);
         SHA256_Update(&T_ctx, D_LEAF.c_str(), D_LEAF.size());
@@ -52,7 +52,7 @@ void *LMS_Priv::compute_knots(void *th_arg) {
     SHA256_CTX T_ctx, tmp_ctx;;
     SHA256_Init(&tmp_ctx);
     SHA256_Update(&tmp_ctx, I.data(), I.size());
-    for (uint32_t r=(1 << arg->i) + ((arg->num - (1 << arg->i)) % NUM_THREADS) ; r<(1 << (arg->i+1)); r+=NUM_THREADS) {
+    for (uint32_t r=(1 << arg->i) + mod(arg->num - (1 << arg->i),NUM_THREADS); r<(1 << (arg->i+1)); r+=NUM_THREADS) {
         T_ctx = tmp_ctx;
         SHA256_Update(&T_ctx, u32str(r).c_str(), 4);
         SHA256_Update(&T_ctx, D_INTR.c_str(), D_INTR.size());
