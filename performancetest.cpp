@@ -27,6 +27,10 @@ void performance(int NUM_THREADS) {
         std::cout << "      H15: " << std::setw(10) << duration.count() << std::endl;
         duration = perf_keygen(std::vector<LMS_ALGORITHM_TYPE>{LMS_SHA256_M32_H20}, otstypecode, NUM_THREADS);
         std::cout << "      H20: " << std::setw(10) << duration.count() << std::endl;
+        if (otstypecode.w == 8) {
+            duration = perf_keygen(std::vector<LMS_ALGORITHM_TYPE>{LMS_SHA256_M32_H25}, otstypecode, NUM_THREADS);
+            std::cout << "      H25: " << std::setw(10) << duration.count() << std::endl;
+        }
         duration = perf_keygen(std::vector<LMS_ALGORITHM_TYPE>{LMS_SHA256_M32_H10, LMS_SHA256_M32_H10}, otstypecode, NUM_THREADS);
         std::cout << "  H10/H10: " << std::setw(10) << duration.count() << std::endl;
         duration = perf_keygen(std::vector<LMS_ALGORITHM_TYPE>{LMS_SHA256_M32_H10, LMS_SHA256_M32_H15}, otstypecode, NUM_THREADS);

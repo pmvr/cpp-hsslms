@@ -92,7 +92,7 @@ LMS_Priv::LMS_Priv(const LMS_ALGORITHM_TYPE& typecode, const LMOTS_ALGORITHM_TYP
         if (pthread_join(threads[k], nullptr) != 0) throw FAILURE("Thread joining.");
     }
     q = 0;
-    T = new uint8_t[DIGEST_LENGTH * (1 << (typecode.h + 1))];
+    T = new uint8_t[std::size_t(DIGEST_LENGTH) * std::size_t(1 << (typecode.h + 1))];
     for (auto k=0; k<NUM_THREADS; k++) {
         if (pthread_create(&threads[k], nullptr, LMS_Priv::compute_leafs, (void*)&args[k]) != 0) throw FAILURE("Thread creation.");
     }
