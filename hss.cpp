@@ -41,6 +41,13 @@ HSS_Priv::HSS_Priv(const int NUM_THREADS, const std::string &bstr) : NUM_THREADS
     }
 }
 
+HSS_Priv::HSS_Priv(const HSS_Priv &obj) : NUM_THREADS(obj.NUM_THREADS) {
+    lmstypecodes = obj.lmstypecodes;
+    lmotsAlgorithmType = obj.lmotsAlgorithmType;
+    for (auto sk : obj.priv) priv.emplace_back(new LMS_Priv(*sk));
+    pub = obj.pub;
+    sig = obj.sig;
+}
 
 HSS_Priv::~HSS_Priv() {
     for (auto p : priv) delete p;

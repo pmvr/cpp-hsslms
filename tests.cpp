@@ -8,9 +8,11 @@ const int NUM_THREADS=2;
 void test_lm_ots() {
     std::cout << "Testing LMOTS" << std::endl;
     std::array<uint8_t, 16> I{};
+    std::array<uint8_t, DIGEST_LENGTH> SEED{};
     for (auto i=0; i<LMOTS_ALGORITHM_TYPES.size(); i++) {
         RAND_priv_bytes(I.data(), I.size());
-        LM_OTS_Priv sk = LM_OTS_Priv(LMOTS_ALGORITHM_TYPES[i], I, 0);
+        RAND_priv_bytes(SEED.data(), SEED.size());
+        LM_OTS_Priv sk = LM_OTS_Priv(LMOTS_ALGORITHM_TYPES[i], I, 0, SEED);
         auto signature = sk.sign("abc");
         auto vk = sk.gen_pub();
         try {
@@ -32,7 +34,8 @@ void test_lm_ots() {
 
     for (auto i=0; i<LMOTS_ALGORITHM_TYPES.size(); i++) {
         RAND_priv_bytes(I.data(), I.size());
-        LM_OTS_Priv sk = LM_OTS_Priv(LMOTS_ALGORITHM_TYPES[i], I, 0);
+        RAND_priv_bytes(SEED.data(), SEED.size());
+        LM_OTS_Priv sk = LM_OTS_Priv(LMOTS_ALGORITHM_TYPES[i], I, 0, SEED);
         auto signature = sk.sign("abc");
         try {
             auto signature = sk.sign("abc");

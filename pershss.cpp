@@ -73,13 +73,13 @@ PersHSS_Priv::PersHSS_Priv(const std::vector<LMS_ALGORITHM_TYPE>& lmstypecodes, 
         : HSS_Priv(lmstypecodes, lmotsAlgorithmType, NUM_THREADS),
           filename(filename) {
     RAND_priv_bytes(salt.data(), salt.size());
-    PKCS5_PBKDF2_HMAC(password, -1, salt.data(), salt.size(), 390000, EVP_sha256(), key.size(), key.data());
+    PKCS5_PBKDF2_HMAC(password, -1, salt.data(), salt.size(), PBKDF2_ITER, EVP_sha256(), key.size(), key.data());
 }
 
 PersHSS_Priv::PersHSS_Priv(const std::string &filename, const char* password, int NUM_THREADS, const std::string &bstr)
         : HSS_Priv(NUM_THREADS, bstr), filename(filename) {
     RAND_priv_bytes(salt.data(), salt.size());
-    PKCS5_PBKDF2_HMAC(password, -1, salt.data(), salt.size(), 390000, EVP_sha256(), key.size(), key.data());
+    PKCS5_PBKDF2_HMAC(password, -1, salt.data(), salt.size(), PBKDF2_ITER, EVP_sha256(), key.size(), key.data());
 }
 
 void PersHSS_Priv::save() {
@@ -119,7 +119,7 @@ PersHSS_Priv PersHSS_Priv::from_file(const std::string &filename, const char *pa
     ifs.seekg (0, std::ifstream::beg);
     ifs.read((char*)salt, sizeof(salt));
     if (!ifs) throw FAILURE(filename + " cannot be read.");
-    PKCS5_PBKDF2_HMAC(password, -1, salt, sizeof(salt), 390000, EVP_sha256(), sizeof(key), key);
+    PKCS5_PBKDF2_HMAC(password, -1, salt, sizeof(salt), PBKDF2_ITER, EVP_sha256(), sizeof(key), key);
     ifs.read((char*)tag, sizeof(tag));
     if (!ifs) throw FAILURE(filename + " cannot be read.");
     ifs.read((char*)IV, sizeof(IV));

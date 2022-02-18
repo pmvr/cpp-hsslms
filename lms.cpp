@@ -26,19 +26,21 @@ LMS_ALGORITHM_TYPE findLmsAlgType(const std::string &bstr) {
 
 void *LMS_Priv::compute_leafs(void *th_arg) {
     auto *arg = (struct th_args *)th_arg;
-    const auto I = arg->prv->I;
+    auto I = arg->prv->I;
+    const auto lmotsAlgorithmType = arg->prv->lmotsAlgorithmType;
+    auto SEED = arg->prv->SEED;
     const auto h = arg->prv->typecode.h;
     const auto T = arg->prv->T;
-    const auto OTS_PRIV= arg->prv->OTS_PRIV;
     const auto NUM_THREADS = arg->NUM_THREADS;
     SHA256_CTX T_ctx, tmp_ctx;
     SHA256_Init(&tmp_ctx);
     SHA256_Update(&tmp_ctx, I.data(), I.size());
     for (uint32_t r=(1 << h) + mod(arg->num - (1 << h),NUM_THREADS); r<(1 << (h+1)); r+=NUM_THREADS) {
+        auto K = LM_OTS_Priv(lmotsAlgorithmType, I, r-(1<<h), SEED).gen_pub().get_K();
         T_ctx = tmp_ctx;
         SHA256_Update(&T_ctx, u32str(r).c_str(), 4);
         SHA256_Update(&T_ctx, D_LEAF.c_str(), D_LEAF.size());
-        SHA256_Update(&T_ctx, OTS_PRIV[r-(1 << h)]->gen_pub().get_K().c_str(), DIGEST_LENGTH);
+        SHA256_Update(&T_ctx, K.c_str(), DIGEST_LENGTH);
         SHA256_Final(T+r*DIGEST_LENGTH, &T_ctx);
     }
     pthread_exit(nullptr);
@@ -63,37 +65,18 @@ void *LMS_Priv::compute_knots(void *th_arg) {
     pthread_exit(nullptr);
 }
 
-void *LMS_Priv::compute_lmots_priv(void *th_arg) {
-    auto *arg = (struct th_args *)th_arg;
-    const auto lmotsAlgorithmType = arg->prv->lmotsAlgorithmType;
-    auto I = arg->prv->I;
-    const auto h = arg->prv->typecode.h;
-    const auto OTS_PRIV = arg->prv->OTS_PRIV;
-    const auto NUM_THREADS = arg->NUM_THREADS;
-    for (uint32_t qi=arg->num; qi<(1 << h); qi+=NUM_THREADS) {
-        OTS_PRIV[qi] = new LM_OTS_Priv(lmotsAlgorithmType, I, qi);
-    }
-    pthread_exit(nullptr);
-}
-
 LMS_Priv::LMS_Priv(const LMS_ALGORITHM_TYPE& typecode, const LMOTS_ALGORITHM_TYPE& lmotsAlgorithmType, const int NUM_THREADS)
         : typecode(typecode), lmotsAlgorithmType(lmotsAlgorithmType), I {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, NUM_THREADS(NUM_THREADS) {
     if (RAND_priv_bytes(I.data(), I.size()) != 1) throw FAILURE("RAND_priv_bytes failure.");
+    if (RAND_priv_bytes(SEED.data(), SEED.size()) != 1) throw FAILURE("RAND_priv_bytes failure.");
     pthread_t threads[NUM_THREADS];
     struct th_args args[NUM_THREADS];
-    OTS_PRIV = new LM_OTS_Priv*[1 << typecode.h];
+    q = 0;
+    T = new uint8_t[std::size_t(DIGEST_LENGTH) * std::size_t(1 << (typecode.h + 1))];
     for (auto k=0; k<NUM_THREADS; k++) {
         args[k].prv = this;
         args[k].num = k;
         args[k].NUM_THREADS = NUM_THREADS;
-        if (pthread_create(&threads[k], nullptr, LMS_Priv::compute_lmots_priv, (void*)&args[k]) != 0) throw FAILURE("Thread creation.");
-    }
-    for (auto k=0; k<NUM_THREADS; k++) {
-        if (pthread_join(threads[k], nullptr) != 0) throw FAILURE("Thread joining.");
-    }
-    q = 0;
-    T = new uint8_t[std::size_t(DIGEST_LENGTH) * std::size_t(1 << (typecode.h + 1))];
-    for (auto k=0; k<NUM_THREADS; k++) {
         if (pthread_create(&threads[k], nullptr, LMS_Priv::compute_leafs, (void*)&args[k]) != 0) throw FAILURE("Thread creation.");
     }
     for (auto k=0; k<NUM_THREADS; k++) {
@@ -121,34 +104,31 @@ LMS_Priv::LMS_Priv(const std::string &bstr, uint32_t &index) : NUM_THREADS(1) {
     index += 4;
     memcpy(I.data(), (uint8_t *)bstr.c_str()+index, I.size());
     index += I.size();
+    memcpy(SEED.data(), (uint8_t *)bstr.c_str()+index, SEED.size());
+    index += SEED.size();
     T = new uint8_t[DIGEST_LENGTH * (1 << (typecode.h + 1))];
     memcpy(T, (uint8_t *)bstr.c_str()+index, DIGEST_LENGTH * (1 << (typecode.h + 1)));
     index += DIGEST_LENGTH * (1 << (typecode.h + 1));
-    OTS_PRIV = new LM_OTS_Priv*[1 << typecode.h];
-    for (auto i=0; i<1 << typecode.h; i++) OTS_PRIV[i] = new LM_OTS_Priv(bstr, index);
 }
 
-
-//LMS_Priv::LMS_Priv(LMS_Priv &other) : typecode(other.typecode),
-//                                      lmotsAlgorithmType(other.lmotsAlgorithmType),
-//                                      I(other.I),
-//                                      q(other.q) {
-//    T = new uint8_t[DIGEST_LENGTH * (1 << (typecode.h + 1))];
-//    memcpy(T, other.T, DIGEST_LENGTH * (1 << (typecode.h + 1)));
-//}
+LMS_Priv::LMS_Priv(const LMS_Priv &obj) : NUM_THREADS(obj.NUM_THREADS) {
+    I = obj.I;
+    SEED = obj.SEED;
+    q = obj.q;
+    typecode = obj.typecode;
+    lmotsAlgorithmType = obj.lmotsAlgorithmType;
+    T = new uint8_t[std::size_t(DIGEST_LENGTH) * std::size_t(1 << (typecode.h + 1))];
+    memcpy(T, obj.T, std::size_t(DIGEST_LENGTH) * std::size_t(1 << (typecode.h + 1)));
+}
 
 LMS_Priv::~LMS_Priv() {
-    for (uint32_t qi=0; qi<(1 << typecode.h); qi++) {
-        delete OTS_PRIV[qi];
-    }
-    delete[] OTS_PRIV;
     delete[] T;
 }
 
 std::string LMS_Priv::sign(const std::string &message) {
     if (q >= (1 << typecode.h)) throw FAILURE("LMS private keys are exhausted.");
     std::string signature = u32str(q);
-    signature += OTS_PRIV[q]->sign(message);
+    signature += LM_OTS_Priv(lmotsAlgorithmType, I, q, SEED).sign(message);
     signature += typecode.typecode;
     uint32_t r = (1 << typecode.h) + q;
     for (auto i=0; i<typecode.h; i++) {
@@ -175,8 +155,8 @@ std::string LMS_Priv::dump() {
     + lmotsAlgorithmType.typecode
     + u32str(q)
     + std::string((char*)I.data(),I.size())
+    + std::string((char*)SEED.data(),SEED.size())
     + std::string((char*)T, DIGEST_LENGTH * (1 << (typecode.h + 1)));
-    for (auto i=0; i<(1 << typecode.h); i++) ret += OTS_PRIV[i]->dump();
     return ret;
 }
 

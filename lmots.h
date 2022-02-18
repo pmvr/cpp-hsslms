@@ -55,13 +55,11 @@ private:
     uint8_t *x;
     bool used{};
 public:
-    LM_OTS_Priv(const LMOTS_ALGORITHM_TYPE& lmotsAlgorithmType, std::array<uint8_t, 16>& I, uint32_t q);
-    LM_OTS_Priv(const std::string &bstr, uint32_t &index);
+    LM_OTS_Priv(const LMOTS_ALGORITHM_TYPE& lmotsAlgorithmType, std::array<uint8_t, 16>& I, uint32_t q, std::array<uint8_t, DIGEST_LENGTH>& SEED);
+    LM_OTS_Priv(const LM_OTS_Priv &obj);
     ~LM_OTS_Priv();
     std::string sign(const std::string &message);
     LM_OTS_Pub gen_pub();
-    std::string dump();
 };
-
 
 #endif //LMS_HASH_BASED_SIGNATURES_LMOTS_H

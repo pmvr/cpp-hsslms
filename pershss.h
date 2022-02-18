@@ -9,6 +9,8 @@
 #include "hss.h"
 #include <openssl/evp.h>
 
+#define PBKDF2_ITER 390000
+
 class PersHSS_Priv : public HSS_Priv {
 private:
     std::string filename;

@@ -31,6 +31,7 @@ private:
 public:
     HSS_Priv(const std::vector<LMS_ALGORITHM_TYPE>& lmstypecodes, const LMOTS_ALGORITHM_TYPE& lmotsAlgorithmType, int NUM_THREADS);
     HSS_Priv(int NUM_THREADS, const std::string &bstr);
+    HSS_Priv(const HSS_Priv&);
     ~HSS_Priv();
     std::string sign(const std::string &message);
     HSS_Pub gen_pub();

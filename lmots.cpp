@@ -23,29 +23,38 @@ LMOTS_ALGORITHM_TYPE findLmotsAlgType(const std::string &bstr) {
     return LMOTS_ALGORITHM_TYPES.at(found);
 }
 
-LM_OTS_Priv::LM_OTS_Priv(const LMOTS_ALGORITHM_TYPE& lmotsAlgorithmType, std::array<uint8_t, 16>& I, uint32_t q)
+LM_OTS_Priv::LM_OTS_Priv(const LMOTS_ALGORITHM_TYPE& lmotsAlgorithmType, std::array<uint8_t, 16>& I, uint32_t q, std::array<uint8_t, DIGEST_LENGTH>& SEED)
         : lmotsAlgorithmType(lmotsAlgorithmType), I(I), q(q), used(false) {
     x = new uint8_t[DIGEST_LENGTH * lmotsAlgorithmType.p];
-    if (RAND_priv_bytes(x, DIGEST_LENGTH*lmotsAlgorithmType.p) != 1) throw FAILURE("RAND_priv_bytes failure.");
+    SHA256_CTX hash_ctx, tmp_ctx;
+    const uint8_t ff[] = {0xff};
+    SHA256_Init(&tmp_ctx);
+    SHA256_Update(&tmp_ctx, I.data(), I.size());
+    SHA256_Update(&tmp_ctx, (uint8_t*)u32str(q).c_str(), 4);
+    for (uint16_t i=0; i<lmotsAlgorithmType.p; i++) {
+        hash_ctx = tmp_ctx;
+        SHA256_Update(&hash_ctx, (uint8_t*)u16str(i).c_str(), 2);
+        SHA256_Update(&hash_ctx, ff, 1);
+        SHA256_Update(&hash_ctx, SEED.data(), SEED.size());
+        SHA256_Final(x+DIGEST_LENGTH*i, &hash_ctx);
+    }
 }
 
-LM_OTS_Priv::LM_OTS_Priv(const std::string &bstr, uint32_t &index) {
-    if (bstr.length()-index < 4) throw FAILURE("Wrong LMOTS private key byte string.");
-    lmotsAlgorithmType = findLmotsAlgType(bstr.substr(index, 4));
-    index += 4;
-    if (bstr.length()-index < I.size()+4+DIGEST_LENGTH * lmotsAlgorithmType.p) throw FAILURE("Wrong LMOTS private key byte string.");
-    memcpy(I.data(), (uint8_t *)bstr.c_str()+index, I.size());
-    index += I.size();
-    q = strTou32(bstr.c_str()+index);
-    index += 4;
+
+LM_OTS_Priv::LM_OTS_Priv(const LM_OTS_Priv &obj) {
+    lmotsAlgorithmType = obj.lmotsAlgorithmType;
+    I = obj.I;
+    q = obj.q;
+    used = obj.used;
     x = new uint8_t[DIGEST_LENGTH * lmotsAlgorithmType.p];
-    memcpy(x, (uint8_t *)bstr.c_str()+index, DIGEST_LENGTH * lmotsAlgorithmType.p);
-    index += DIGEST_LENGTH * lmotsAlgorithmType.p;
+    memcpy(x, obj.x, DIGEST_LENGTH * lmotsAlgorithmType.p);
 }
+
 
 LM_OTS_Priv::~LM_OTS_Priv() {
     delete[] x;
 }
+
 
 std::string LM_OTS_Priv::sign(const std::string &message) {
     if (used) throw FAILURE("LMOTS private key has already been used for signature.");
@@ -121,13 +130,6 @@ LM_OTS_Pub LM_OTS_Priv::gen_pub() {
             + std::string((char*)I.data(), I.size())
             + u32str(q)
             + std::string((char*)tmp, DIGEST_LENGTH));
-}
-
-std::string LM_OTS_Priv::dump() {
-    return lmotsAlgorithmType.typecode
-              + std::string((char*)I.data(), I.size())
-              + u32str(q)
-              + std::string((char*)x, DIGEST_LENGTH * lmotsAlgorithmType.p);
 }
 
 LM_OTS_Pub::LM_OTS_Pub(const std::string &pubkey) : pubkey(pubkey) {
